@@ -3,17 +3,16 @@ import { observer } from "mobx-react-lite";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { storesContext } from "./mobx/storesIndex";
 import HomePage from "./pages/HomePage/HomePage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import SignupPage from "./pages/ProfilePage/SignUpPage/SignupPage";
+import LoginPage from "./pages/ProfilePage/LoginPage/LoginPage";
+import Header from "./components/Header/Header";
 
 const AppRouter = observer(() => {
-  const { userStore } = useContext(storesContext);
   const [isAppReady, setIsAppReady] = useState(false);
 
   const loadApp = async () => {
     if (!isAppReady) {
-      console.log("loading app...");
-      await userStore.getUserData();
-      console.log("app loaded");
-
       setIsAppReady(true);
     }
   };
@@ -25,13 +24,18 @@ const AppRouter = observer(() => {
   if (!isAppReady) {
     return "loading...";
   }
+
   return (
     <Router>
-      <Routes>
-        <Route path="/" Component={HomePage} />
-        {/* <Route path="/about" component={AboutPage} /> */}
-        {/* <Route component={NotFoundPage} /> */}
-      </Routes>
+      <Header />
+      <div className="router-container" style={{ height: "100vh", padding: 16 }}>
+        <Routes>
+          <Route path="/" Component={HomePage} />
+          <Route path="/profile" Component={ProfilePage} />
+          <Route path="/signup" Component={SignupPage} />
+          <Route path="/login" Component={LoginPage} />
+        </Routes>
+      </div>
     </Router>
   );
 });

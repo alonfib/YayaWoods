@@ -1,32 +1,24 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect } from "react";
 import stores, { storesContext } from "./mobx/storesIndex";
 import AppRouter from "./AppRouter";
+import "./App.css";
+import { ThemeProvider } from "@mui/material/styles";
+import { CacheProvider } from "@emotion/react";
+import i18n from "../i18n"; // should be unused
+import { cacheRtl, theme } from "./utils/theme";
 
 export default function App() {
-  // const { getNotificationsPermission, scheduleNotifications } = useNotifications();
-
-  // const [fontsLoaded] = useFonts({
-  // 	'Merienda-Bold': require('./assets/fonts/Merienda-Bold.ttf'),
-  // 	'Merienda-Regular': require('./assets/fonts/Merienda-Regular.ttf')
-  // });
-
   useEffect(() => {
-    // NEVER REMOVE CONSOLE LOG BELOW - will cause crash
+    console.log("language", i18n.language);
   }, []);
-
-  // const onLayoutRootView = useCallback(async () => {
-  // 	if (fontsLoaded) {
-  // 		await SplashScreen.hideAsync();
-  // 	}
-  // }, [fontsLoaded]);
-
-  // if (!fontsLoaded) {
-  // 	return null;
-  // }
 
   return (
     <storesContext.Provider value={stores}>
-      <AppRouter />
+      <CacheProvider value={cacheRtl}>
+        <ThemeProvider theme={theme}>
+          <AppRouter />
+        </ThemeProvider>
+      </CacheProvider>
     </storesContext.Provider>
   );
 }

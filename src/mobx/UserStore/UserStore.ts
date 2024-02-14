@@ -3,7 +3,7 @@ import { UserData } from "./types";
 import initialUser from "./initialUser";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "../../../firebaseConfig";
-import { COLLECTIONS, addDocument, getDocument } from "../../utils/fireUtils";
+import { COLLECTIONS, addDocument, getDocument, setDocument } from "../../utils/fireUtils";
 import { v4 as uuid } from "uuid";
 
 interface UserProps {
@@ -20,6 +20,8 @@ export class UserStoreClass implements UserProps {
       userData: observable,
       isLoadingUser: observable,
       getUserData: action,
+      createFireBaseUser: action,
+      clearUserData: action,
     });
   }
 
@@ -32,35 +34,25 @@ export class UserStoreClass implements UserProps {
               this.isLoadingUser = true;
               const user: User | null = firebaseUser || firebaseAuth.currentUser;
               const uid = user?.uid ?? "";
-
               const userDataDoc = (await getDocument(COLLECTIONS.users, uid)) as UserData | null;
-              if (uid.length && userDataDoc) {
+              if (userDataDoc) {
                 this.handleSuccsessfulUserLoad(userDataDoc);
-              } else {
-                this.handleFailedUserLoad();
+              } else if (user) {
+                this.createFireBaseUser(user);
               }
+              return;
             } catch (error) {
               console.log(`error in getUserData: ${error}`);
               this.isLoadingUser = false;
               throw error;
             }
           } else {
-            this.handleFailedUserLoad();
-            // await userStore.fetchLocalUser();
+            console.log("No user found");
           }
         })
       );
     } catch (error) {
-      // console.error(`error in onAuthStateChanged: ${error}`);
-    }
-  }
-
-  private async handleFailedUserLoad() {
-    // in case there is no user doc yet in the db we create one
-    console.log("Creating a user doc");
-    const newDocId = await this.updateFireBaseUser(this.userData);
-    if (newDocId) {
-      await this.getUserData();
+      console.error(`Login Failed: ${error}`);
     }
   }
 
@@ -69,24 +61,26 @@ export class UserStoreClass implements UserProps {
     this.isLoadingUser = false;
     console.log("User loaded successfully");
   }
-  /** Create & Update FireBaser users */
-  private async updateFireBaseUser(newUserData: UserData) {
+
+  async createFireBaseUser(firebaseUser: User) {
     try {
-      const isNewUser = !newUserData.id;
-
-      let updatedUser = newUserData;
-      if (isNewUser) {
-        updatedUser.id = uuid();
-      }
-
-      return await addDocument(COLLECTIONS.users, updatedUser.id, {
-        ...newUserData,
-        id: updatedUser.id,
-      });
+      console.log("Creating a new FireBase user doc");
+      this.userData = {
+        ...this.userData,
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? "",
+        name: firebaseUser.displayName ?? "",
+      };
+      const docId = await addDocument(COLLECTIONS.users, firebaseUser.uid, this.userData);
+      return docId;
     } catch (error) {
-      console.log(`error in setNewUserData: ${error}`);
+      console.log(`error in createFireBaseUser: ${error}`);
       throw error;
     }
+  }
+
+  clearUserData() {
+    this.userData = { ...initialUser };
   }
 }
 
